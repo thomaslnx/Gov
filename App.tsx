@@ -1,20 +1,62 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import 'react-native-get-random-values'
+import './src/libs/dayjs'
 
-export default function App() {
+import { ThemeProvider } from 'styled-components/native'
+import { useFonts } from 'expo-font'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
+
+import { useNetInfo } from '@react-native-community/netinfo'
+
+import { AppProvider, UserProvider } from '@realm/react'
+import { RealmProvider, syncConfig } from './src/libs/realm'
+
+import SignIn from './src/screens/SignIn'
+import Loading from './src/components/Loading'
+
+import NetMessage from './src/components/NetMessage'
+
+import { Routes } from './src/routes'
+
+import { REALM_ID } from '@env'
+
+const App = () => {
+  const [ fontsLoaded, fontError ] = useFonts({
+    'raw-line': require('./assets/fonts/Rawline/rawline-400.ttf')
+  })
+  const netInfo = useNetInfo();
+
+  // In case of fuck with database schema
+  // console.log('Realm path: ', Realm.defaultPath)
+
+  if (!Loading) {
+    return (
+      <Loading />
+    )
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+    <SafeAreaProvider>
+      <AppProvider id={REALM_ID}>
+        <ThemeProvider theme={{
+          color: 'white'
+        }}>
+
+          {
+            !netInfo.isConnected && 
+            <NetMessage 
+            title='Você está off line'
+          />
+          }
+
+          <UserProvider fallback={SignIn}>
+            <RealmProvider sync={syncConfig} fallback={Loading}>
+              <Routes />
+            </RealmProvider>
+          </UserProvider>
+        </ThemeProvider>
+      </AppProvider>
+    </SafeAreaProvider>
+  )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default App
